@@ -109,10 +109,10 @@ class rotator():
         
         while set_el >= 1:
             self._get_pos()
-            time = datetime.now(UTC)
-            el, az, dist = diff.at(ts.utc(time)).altaz()
+            time_now = datetime.now(UTC)
+            el, az, dist = diff.at(ts.utc(time_now)).altaz()
             set_el, set_az = el.degrees, az.degrees
-            log.append(np.array([time.timestamp(), az, set_az, el, set_el]))
+            log.append(np.array([time_now.timestamp(), az, set_az, el, set_el]))
             if abs(self.cur_el - set_el) > self.threshold:
                 self._set_pos(set_az,set_el)
             elif abs(self.cur_az - set_az) > self.threshold:
@@ -148,10 +148,7 @@ if __name__ == "__main__":
                     continue
                 
                 sat, freq, _ = my_sats[key]
-                radio_process = sub.Popen(["python3","satellite_tracker.py", "-f",str(freq), "-p", active_path + key])
+                radio_process = sub.Popen(["/bin/python3","satellite_sniffer.py", "-f",str(freq), "-p", active_path + key])
                 log = rotorian.track(sat)
                 radio_process.kill()
                 np.savetxt(active_path + key + "_station.csv", log)
-
-
-main()
