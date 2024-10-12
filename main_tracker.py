@@ -18,22 +18,22 @@ with open(".secret", "r") as f:
 
 
 def update_tle(filter):
-    time = datetime.now(UTC).strftime(date_format) + "/"
-    if not os.path.isdir(output_dir + time):
+    time_now = datetime.now(UTC).strftime(date_format) + "/"
+    if not os.path.isdir(output_dir + time_now):
         os.umask(0)
-        os.makedirs(output_dir + time)
-    satellites = load.tle_file(celestrak_satnogs,filename=output_dir + time + "tle.txt",reload=True)
-    satellites.extend(load.tle_file(celestrak_ham, filename=output_dir + time + "ham_tle.txt", reload=True))
+        os.makedirs(output_dir + time_now)
+    satellites = load.tle_file(celestrak_satnogs,filename=output_dir + time_now + "tle.txt",reload=True)
+    satellites.extend(load.tle_file(celestrak_ham, filename=output_dir + time_now + "ham_tle.txt", reload=True))
     sats_by_name = {sat.name: sat for sat in satellites}
     for key in filter:
         filter[key][0] = sats_by_name[key]
-    return filter, output_dir + time
+    return filter, output_dir + time_now
 
 
 def find_passes(filter: dict):
     starttime = ts.utc(datetime.now(tz=UTC))
     
-    time_extension = 120/86400
+    time_extension = 30/86400
     pass_list = []
 
     for key in filter:
@@ -102,17 +102,17 @@ class rotator():
         set_az, set_el = 0,0
         log = []
         diff = sat - station
-        while set_el <=0:
+        while set_el <=0.5:
             el, az, dist = diff.at(ts.utc(datetime.now(UTC))).altaz()
             set_el = el.degrees
             time.sleep(1)
         
-        while set_el >= 1:
+        while set_el >= 0.5:
             self._get_pos()
             time_now = datetime.now(UTC)
             el, az, dist = diff.at(ts.utc(time_now)).altaz()
             set_el, set_az = el.degrees, az.degrees
-            log.append(np.array([time_now.timestamp(), az, set_az, el, set_el]))
+            log.append(np.array([time_now.timestamp(), self.cur_az, set_az, self.cur_el, set_el]))
             if abs(self.cur_el - set_el) > self.threshold:
                 self._set_pos(set_az,set_el)
             elif abs(self.cur_az - set_az) > self.threshold:
@@ -148,7 +148,10 @@ if __name__ == "__main__":
                     continue
                 
                 sat, freq, _ = my_sats[key]
-                radio_process = sub.Popen(["/bin/python3","satellite_sniffer.py", "-f",str(freq), "-p", active_path + key])
+                radio_process = sub.Popen(["python3","satellite_sniffer.py", "-f",str(freq), "-p", active_path + key + "_" + start_time])
                 log = rotorian.track(sat)
                 radio_process.kill()
-                np.savetxt(active_path + key + "_station.csv", log)
+                np.savetxt(active_path + key +"_"+start_time + "_station.csv", log)
+
+
+main()
