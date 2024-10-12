@@ -142,7 +142,7 @@ if __name__ == "__main__":
                 start_time = start.utc_datetime()[0]
                 if time_now < start_time:
                     diff = (start_time - time_now).total_seconds()
-                    print(f"{time_now.strftime("%Y-%m-%d %H%M%S")} Next pass for {key} in {diff} seconds.")
+                    print(f"{time_now.strftime('%Y-%m-%d %H:%M:%S')} Next pass for {key} in {diff} seconds.")
                     time.sleep(diff)
                 else:
                     continue
